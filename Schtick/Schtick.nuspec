@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>Schtick</title>
+    <authors>Bret Copeland</authors>
+    <owners>Bret Copeland</owners>
+    <projectUrl>https://github.com/schyntax/cs-schtick</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2015</copyright>
+    <tags>Schyntax Schedule Task Runner</tags>
+    <dependencies>
+      <dependency id="Schyntax" version="1.0.0"/>
+    </dependencies>
+  </metadata>
+</package>
