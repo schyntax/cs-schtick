@@ -1,4 +1,4 @@
-# C# Schyntax
+# C# Schtick
 
 [![NuGet version](https://badge.fury.io/nu/Schyntax.svg)](http://badge.fury.io/nu/Schtick)
 [![Build status](https://ci.appveyor.com/api/projects/status/9y3f0tnvtmiyyfw7/branch/master?svg=true)](https://ci.appveyor.com/project/bretcope/cs-schtick/branch/master)
