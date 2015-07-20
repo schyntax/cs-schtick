@@ -23,7 +23,7 @@ schtick.AddTask("unique-task-name", "min(15)", (task, timeIntendedToRun) => DoSo
 
 > For complete documentation of schedule format language itself, see the [Schyntax](https://github.com/schyntax/schyntax) project.
 
-`AddTask` has several optional arguments which are documented in [Schtick.cs](https://github.com/schyntax/cs-schtick/blob/master/Schtick/Schtick.cs) and will show up in intellisense.
+`AddTask()` has several optional arguments which are documented in [Schtick.cs](https://github.com/schyntax/cs-schtick/blob/master/Schtick/Schtick.cs) and will show up in intellisense.
 
 ### Async Task Callbacks
 
@@ -35,7 +35,7 @@ schtick.AddAsyncTask("task-name", "hour(*)", async (task, time) => await DoSomet
 
 ### ScheduledTask Objects
 
-`AddTask` and `AddAsyncTask` return an instance of `ScheduledTask`. This object has properties like `Name`, `IsScheduleRunning`, and `IsCallbackExecuting`. It can be used to start and stop the schedule via `StartSchedule()` and `StopSchedule`. There is also an `UpdateSchedule` method which allows you keep the same task, but run it on a different schedule.
+`AddTask()` and `AddAsyncTask()` return an instance of `ScheduledTask`. This object has properties like `Name`, `IsScheduleRunning`, and `IsCallbackExecuting`. It can be used to start and stop the schedule via `StartSchedule()` and `StopSchedule()`. There is also an `UpdateSchedule()` method which allows you keep the same task, but run it on a different schedule.
 
 The `ScheduledTask` object is also the first argument to all task callbacks.
 
