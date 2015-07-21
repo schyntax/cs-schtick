@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace Schyntax
 {
-    public delegate void ScheduledTaskCallback(ScheduledTask task, DateTime timeIntendedToRun);
-    public delegate Task ScheduledTaskAsyncCallback(ScheduledTask task, DateTime timeIntendedToRun);
+    public delegate void ScheduledTaskCallback(ScheduledTask task, DateTimeOffset timeIntendedToRun);
+    public delegate Task ScheduledTaskAsyncCallback(ScheduledTask task, DateTimeOffset timeIntendedToRun);
 
     public class Schtick
     {
@@ -23,7 +23,7 @@ namespace Schyntax
         /// <param name="schedule">A Schyntax schedule string.</param>
         /// <param name="callback">Function which will be called each time the task is supposed to run.</param>
         /// <param name="autoRun">If true, Start() will be called on the task automatically.</param>
-        /// <param name="lastKnownRun">The last Date when the task is known to have run. Used for Task Windows.</param>
+        /// <param name="lastKnownEvent">The last Date when the task is known to have run. Used for Task Windows.</param>
         /// <param name="window">
         /// The period of time after an event should have run where it would still be appropriate to run it.
         /// See Task Windows documentation for more details.
@@ -33,7 +33,7 @@ namespace Schyntax
             string schedule,
             ScheduledTaskCallback callback,
             bool autoRun = true,
-            DateTime lastKnownRun = default(DateTime),
+            DateTimeOffset lastKnownEvent = default(DateTimeOffset),
             TimeSpan window = default(TimeSpan))
         {
             if (schedule == null)
@@ -42,7 +42,7 @@ namespace Schyntax
             if (callback == null)
                 throw new ArgumentNullException(nameof(callback));
 
-            return AddTaskImpl(name, new Schedule(schedule), callback, null, autoRun, lastKnownRun, window);
+            return AddTaskImpl(name, new Schedule(schedule), callback, null, autoRun, lastKnownEvent, window);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Schyntax
         /// <param name="schedule">A Schyntax schedule string.</param>
         /// <param name="asyncCallback">Function which will be called each time the task is supposed to run.</param>
         /// <param name="autoRun">If true, Start() will be called on the task automatically.</param>
-        /// <param name="lastKnownRun">The last Date when the task is known to have run. Used for Task Windows.</param>
+        /// <param name="lastKnownEvent">The last Date when the task is known to have run. Used for Task Windows.</param>
         /// <param name="window">
         /// The period of time after an event should have run where it would still be appropriate to run it.
         /// See Task Windows documentation for more details.
@@ -62,7 +62,7 @@ namespace Schyntax
             string schedule,
             ScheduledTaskAsyncCallback asyncCallback,
             bool autoRun = true,
-            DateTime lastKnownRun = default(DateTime),
+            DateTimeOffset lastKnownEvent = default(DateTimeOffset),
             TimeSpan window = default(TimeSpan))
         {
             if (schedule == null)
@@ -71,7 +71,7 @@ namespace Schyntax
             if (asyncCallback == null)
                 throw new ArgumentNullException(nameof(asyncCallback));
 
-            return AddTaskImpl(name, new Schedule(schedule), null, asyncCallback, autoRun, lastKnownRun, window);
+            return AddTaskImpl(name, new Schedule(schedule), null, asyncCallback, autoRun, lastKnownEvent, window);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Schyntax
         /// <param name="schedule">A Schyntax Schedule object.</param>
         /// <param name="callback">Function which will be called each time the task is supposed to run.</param>
         /// <param name="autoRun">If true, Start() will be called on the task automatically.</param>
-        /// <param name="lastKnownRun">The last Date when the task is known to have run. Used for Task Windows.</param>
+        /// <param name="lastKnownEvent">The last Date when the task is known to have run. Used for Task Windows.</param>
         /// <param name="window">
         /// The period of time after an event should have run where it would still be appropriate to run it.
         /// See Task Windows documentation for more details.
@@ -91,13 +91,13 @@ namespace Schyntax
             Schedule schedule,
             ScheduledTaskCallback callback,
             bool autoRun = true,
-            DateTime lastKnownRun = default(DateTime),
+            DateTimeOffset lastKnownEvent = default(DateTimeOffset),
             TimeSpan window = default(TimeSpan))
         {
             if (callback == null)
                 throw new ArgumentNullException(nameof(callback));
 
-            return AddTaskImpl(name, schedule, callback, null, autoRun, lastKnownRun, window);
+            return AddTaskImpl(name, schedule, callback, null, autoRun, lastKnownEvent, window);
         }
 
 
@@ -108,7 +108,7 @@ namespace Schyntax
         /// <param name="schedule">A Schyntax Schedule object.</param>
         /// <param name="asyncCallback">Function which will be called each time the task is supposed to run.</param>
         /// <param name="autoRun">If true, Start() will be called on the task automatically.</param>
-        /// <param name="lastKnownRun">The last Date when the task is known to have run. Used for Task Windows.</param>
+        /// <param name="lastKnownEvent">The last Date when the task is known to have run. Used for Task Windows.</param>
         /// <param name="window">
         /// The period of time after an event should have run where it would still be appropriate to run it.
         /// See Task Windows documentation for more details.
@@ -118,13 +118,13 @@ namespace Schyntax
             Schedule schedule,
             ScheduledTaskAsyncCallback asyncCallback,
             bool autoRun = true,
-            DateTime lastKnownRun = default(DateTime),
+            DateTimeOffset lastKnownEvent = default(DateTimeOffset),
             TimeSpan window = default(TimeSpan))
         {
             if (asyncCallback == null)
                 throw new ArgumentNullException(nameof(asyncCallback));
 
-            return AddTaskImpl(name, schedule, null, asyncCallback, autoRun, lastKnownRun, window);
+            return AddTaskImpl(name, schedule, null, asyncCallback, autoRun, lastKnownEvent, window);
         }
 
         private ScheduledTask AddTaskImpl(
@@ -133,7 +133,7 @@ namespace Schyntax
             ScheduledTaskCallback callback,
             ScheduledTaskAsyncCallback asyncCallback,
             bool autoRun,
-            DateTime lastKnownRun,
+            DateTimeOffset lastKnownEvent,
             TimeSpan window)
         {
             if (schedule == null)
@@ -163,7 +163,7 @@ namespace Schyntax
             task.OnException += TaskOnOnException;
 
             if (autoRun)
-                task.StartSchedule(lastKnownRun);
+                task.StartSchedule(lastKnownEvent);
 
             return task;
         }
@@ -265,8 +265,8 @@ namespace Schyntax
         public bool IsCallbackExecuting => _execLocked == 1;
         public bool IsAttached { get; internal set; }
         public TimeSpan Window { get; set; }
-        public DateTime NextEvent { get; private set; }
-        public DateTime PrevEvent { get; private set; }
+        public DateTimeOffset NextEvent { get; private set; }
+        public DateTimeOffset PrevEvent { get; private set; }
 
         public event Action<ScheduledTask, Exception> OnException;
 
@@ -282,7 +282,7 @@ namespace Schyntax
             AsyncCallback = asyncCallback;
         }
 
-        public void StartSchedule(DateTime lastKnownRun = default(DateTime))
+        public void StartSchedule(DateTimeOffset lastKnownEvent = default(DateTimeOffset))
         {
             lock (_scheduleLock)
             {
@@ -292,15 +292,15 @@ namespace Schyntax
                 if (IsScheduleRunning)
                     return;
 
-                var firstEvent = default(DateTime);
+                var firstEvent = default(DateTimeOffset);
                 var firstEventSet = false;
                 var window = Window;
-                if (window > TimeSpan.Zero && lastKnownRun != default(DateTime))
+                if (window > TimeSpan.Zero && lastKnownEvent != default(DateTimeOffset))
                 {
                     // check if we actually want to run the first event right away
                     var prev = Schedule.Previous();
-                    lastKnownRun = lastKnownRun.AddSeconds(1); // add a second for good measure
-                    if (prev > lastKnownRun && prev > (DateTime.UtcNow - window))
+                    lastKnownEvent = lastKnownEvent.AddSeconds(1); // add a second for good measure
+                    if (prev > lastKnownEvent && prev > (DateTimeOffset.UtcNow - window))
                     {
                         firstEvent = prev;
                         firstEventSet = true;
@@ -318,9 +318,9 @@ namespace Schyntax
 
                 NextEvent = firstEvent;
                 var runId = _runId;
-                Task.Run(() => Run(runId));
-
                 IsScheduleRunning = true;
+
+                Task.Run(() => Run(runId));
             }
         }
         
@@ -367,7 +367,7 @@ namespace Schyntax
                     return;
 
                 var eventTime = NextEvent;
-                var delay = eventTime - DateTime.UtcNow;
+                var delay = eventTime - DateTimeOffset.UtcNow;
 
                 if (delay > TimeSpan.Zero)
                     await Task.Delay(delay).ConfigureAwait(false);
@@ -416,6 +416,7 @@ namespace Schyntax
                             catch(Exception ex)
                             {
                                 _runId++;
+                                IsScheduleRunning = false;
                                 RaiseException(new ScheduleCrashException("Schtick Schedule has been terminated because the next valid time could not be found.", this, ex));
                                 return;
                             }

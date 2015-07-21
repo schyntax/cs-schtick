@@ -11,12 +11,12 @@ namespace Schyntax.Tests
     {
         private struct RunRecord
         {
-            public DateTime Actual { get; }
-            public DateTime Intended { get; }
+            public DateTimeOffset Actual { get; }
+            public DateTimeOffset Intended { get; }
 
             public int MillisecondsDifference => (int)Math.Abs((Actual - Intended).TotalMilliseconds);
 
-            public RunRecord(DateTime actual, DateTime intended)
+            public RunRecord(DateTimeOffset actual, DateTimeOffset intended)
             {
                 Actual = actual;
                 Intended = intended;
@@ -31,10 +31,10 @@ namespace Schyntax.Tests
             schtick.OnTaskException += (task, exception) => taskEx = exception;
 
             var allRecords = new List<RunRecord>();
-            var all = schtick.AddTask("all", "sec(*)", (task, run) => { allRecords.Add(new RunRecord(DateTime.UtcNow, run)); });
+            var all = schtick.AddTask("all", "sec(*)", (task, run) => { allRecords.Add(new RunRecord(DateTimeOffset.UtcNow, run)); });
 
             var evenRecords = new List<RunRecord>();
-            var even = schtick.AddTask("even", "sec(*%2)", (task, run) => { evenRecords.Add(new RunRecord(DateTime.UtcNow, run)); });
+            var even = schtick.AddTask("even", "sec(*%2)", (task, run) => { evenRecords.Add(new RunRecord(DateTimeOffset.UtcNow, run)); });
 
             // give them a chance to run
             Thread.Sleep(4000);
@@ -65,16 +65,16 @@ namespace Schyntax.Tests
             schtick.OnTaskException += (task, exception) => taskEx = exception;
 
             // generate a schedule for five seconds ago (and every minute at that second)
-            var fiveSecAgo = DateTime.UtcNow.AddSeconds(-5);
+            var fiveSecAgo = DateTimeOffset.UtcNow.AddSeconds(-5);
             var sch = "sec(" + fiveSecAgo.Second + ")";
 
             // this should trigger an immediate event
             var window1Run = false;
-            var window1 = schtick.AddTask("window1", sch, (task, run) => { window1Run = true; }, lastKnownRun: fiveSecAgo.AddMinutes(-1), window: TimeSpan.FromMinutes(1));
+            var window1 = schtick.AddTask("window1", sch, (task, run) => { window1Run = true; }, lastKnownEvent: fiveSecAgo.AddMinutes(-1), window: TimeSpan.FromMinutes(1));
 
             // this should not trigger an immediate event
             var window2Run = false;
-            var window2 = schtick.AddTask("window2" ,sch, (task, run) => { window2Run = true; }, lastKnownRun: fiveSecAgo, window: TimeSpan.FromMinutes(1));
+            var window2 = schtick.AddTask("window2" ,sch, (task, run) => { window2Run = true; }, lastKnownEvent: fiveSecAgo, window: TimeSpan.FromMinutes(1));
 
             Thread.Sleep(1000);
 
