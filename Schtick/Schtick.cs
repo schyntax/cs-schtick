@@ -338,6 +338,9 @@ namespace Schyntax
 
         public void UpdateSchedule(string schedule)
         {
+            if (Schedule.OriginalText == schedule)
+                return;
+
             UpdateSchedule(new Schedule(schedule));
         }
 
