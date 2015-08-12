@@ -385,11 +385,12 @@ namespace Schyntax
 
                         // take execution lock
                         execLockTaken = Interlocked.CompareExchange(ref _execLocked, 1, 0) == 0;
+                        if (execLockTaken)
+                            PrevEvent = eventTime; // set this here while we're still in the schedule lock
                     }
 
                     if (execLockTaken) // if lock wasn't taken, then we're still executing from a previous event, which means we skip this one.
                     {
-                        PrevEvent = eventTime;
                         try
                         {
                             if (Callback != null)
@@ -401,35 +402,35 @@ namespace Schyntax
                         {
                             RaiseException(ex);
                         }
-
-                        // figure out the next time to run the schedule
-                        lock (_scheduleLock)
-                        {
-                            if (runId != _runId)
-                                return;
-
-                            try
-                            {
-                                var next = Schedule.Next();
-                                if (next <= eventTime)
-                                    next = Schedule.Next(eventTime);
-
-                                NextEvent = next;
-                            }
-                            catch(Exception ex)
-                            {
-                                _runId++;
-                                IsScheduleRunning = false;
-                                RaiseException(new ScheduleCrashException("Schtick Schedule has been terminated because the next valid time could not be found.", this, ex));
-                                return;
-                            }
-                        }
                     }
                 }
                 finally
                 {
                     if (execLockTaken)
                         _execLocked = 0; // release exec lock
+                }
+
+                // figure out the next time to run the schedule
+                lock (_scheduleLock)
+                {
+                    if (runId != _runId)
+                        return;
+
+                    try
+                    {
+                        var next = Schedule.Next();
+                        if (next <= PrevEvent)
+                            next = Schedule.Next(PrevEvent);
+
+                        NextEvent = next;
+                    }
+                    catch(Exception ex)
+                    {
+                        _runId++;
+                        IsScheduleRunning = false;
+                        RaiseException(new ScheduleCrashException("Schtick Schedule has been terminated because the next valid time could not be found.", this, ex));
+                        return;
+                    }
                 }
             }
         }
