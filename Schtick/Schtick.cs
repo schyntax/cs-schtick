@@ -12,9 +12,17 @@ namespace Schyntax
     {
         private readonly object _lockTasks = new object();
         private readonly Dictionary<string, ScheduledTask> _tasks = new Dictionary<string, ScheduledTask>();
+        private readonly object _lockHeap = new object();
+        private readonly PendingEventHeap _eventHeap = new PendingEventHeap();
+
         public bool IsShuttingDown { get; private set; }
 
         public event Action<ScheduledTask, Exception> OnTaskException;
+
+        public Schtick()
+        {
+            Task.Run((Func<Task>)Poll);
+        }
 
         /// <summary>
         /// Adds a scheduled task to this instance of Schtick.
@@ -141,7 +149,7 @@ namespace Schyntax
 
             if (name == null)
                 name = Guid.NewGuid().ToString();
-
+            
             ScheduledTask task;
             lock (_lockTasks)
             {
@@ -151,7 +159,7 @@ namespace Schyntax
                 if (_tasks.ContainsKey(name))
                     throw new Exception($"A scheduled task named \"{name}\" already exists.");
 
-                task = new ScheduledTask(name, schedule, callback, asyncCallback)
+                task = new ScheduledTask(this, name, schedule, callback, asyncCallback)
                 {
                     Window = window,
                     IsAttached = true,
@@ -224,7 +232,7 @@ namespace Schyntax
                 IsShuttingDown = true;
                 tasks = GetAllTasks();
             }
-            
+
             foreach (var t in tasks)
             {
                 t.IsAttached = false; // prevent anyone from calling start on the task again
@@ -249,6 +257,58 @@ namespace Schyntax
                 await Task.Delay(10).ConfigureAwait(false); // wait 10 milliseconds, then check again
             }
         }
+
+        internal void AddPendingEvent(PendingEvent ev)
+        {
+            if (IsShuttingDown) // don't care about adding anything if we're shutting down
+                return;
+
+            lock (_lockHeap)
+            {
+                _eventHeap.Push(ev);
+            }
+        }
+
+        private async Task Poll()
+        {
+            // figure out the initial delay
+            var now = DateTimeOffset.UtcNow;
+            DateTimeOffset intendedTime = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, 0, now.Offset);
+            if (now.Millisecond > 0)
+            {
+                await Task.Delay(1000 - now.Millisecond);
+                intendedTime = intendedTime.AddSeconds(1);
+            }
+
+            while (true)
+            {
+                if (IsShuttingDown)
+                    return;
+
+                PopAndRunEvents(intendedTime);
+
+                // figure out the next second to poll on
+                now = DateTimeOffset.UtcNow;
+                do
+                {
+                    intendedTime = intendedTime.AddSeconds(1);
+                }
+                while (intendedTime < now);
+
+                await Task.Delay(intendedTime - now);
+            }
+        }
+
+        private void PopAndRunEvents(DateTimeOffset intendedTime)
+        {
+            lock (_lockHeap)
+            {
+                while (_eventHeap.Count > 0 && _eventHeap.Peek().ScheduledTime <= intendedTime)
+                {
+                    _eventHeap.Pop().Run(); // queues for running on the thread pool
+                }
+            }
+        }
     }
 
     public class ScheduledTask
@@ -256,6 +316,7 @@ namespace Schyntax
         private readonly object _scheduleLock = new object();
         private int _runId = 0;
         private int _execLocked = 0;
+        private readonly Schtick _schtick;
 
         public string Name { get; }
         public Schedule Schedule { get; private set; }
@@ -270,8 +331,9 @@ namespace Schyntax
 
         public event Action<ScheduledTask, Exception> OnException;
 
-        internal ScheduledTask(string name, Schedule schedule, ScheduledTaskCallback callback, ScheduledTaskAsyncCallback asyncCallback)
+        internal ScheduledTask(Schtick schtick, string name, Schedule schedule, ScheduledTaskCallback callback, ScheduledTaskAsyncCallback asyncCallback)
         {
+            _schtick = schtick;
             Name = name;
             Schedule = schedule;
 
@@ -317,10 +379,8 @@ namespace Schyntax
                 }
 
                 NextEvent = firstEvent;
-                var runId = _runId;
                 IsScheduleRunning = true;
-
-                Task.Run(() => Run(runId));
+                QueueNextEvent();
             }
         }
         
@@ -362,77 +422,71 @@ namespace Schyntax
             }
         }
 
-        private async Task Run(int runId)
+        internal async Task RunPendingEvent(PendingEvent ev)
         {
-            while (true)
+            var eventTime = ev.ScheduledTime;
+            var execLockTaken = false;
+            try
             {
-                if (runId != _runId)
-                    return;
-
-                var eventTime = NextEvent;
-                var delay = eventTime - DateTimeOffset.UtcNow;
-
-                if (delay > TimeSpan.Zero)
-                    await Task.Delay(delay).ConfigureAwait(false);
-
-                var execLockTaken = false;
-                try
-                {
-                    lock (_scheduleLock)
-                    {
-                        if (runId != _runId)
-                            return;
-
-                        // take execution lock
-                        execLockTaken = Interlocked.CompareExchange(ref _execLocked, 1, 0) == 0;
-                        if (execLockTaken)
-                            PrevEvent = eventTime; // set this here while we're still in the schedule lock
-                    }
-
-                    if (execLockTaken) // if lock wasn't taken, then we're still executing from a previous event, which means we skip this one.
-                    {
-                        try
-                        {
-                            if (Callback != null)
-                                Callback(this, eventTime);
-                            else
-                                await AsyncCallback(this, eventTime).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            RaiseException(ex);
-                        }
-                    }
-                }
-                finally
-                {
-                    if (execLockTaken)
-                        _execLocked = 0; // release exec lock
-                }
-
-                // figure out the next time to run the schedule
                 lock (_scheduleLock)
                 {
-                    if (runId != _runId)
+                    if (ev.RunId != _runId)
                         return;
 
+                    // take execution lock
+                    execLockTaken = Interlocked.CompareExchange(ref _execLocked, 1, 0) == 0;
+                    if (execLockTaken)
+                        PrevEvent = eventTime; // set this here while we're still in the schedule lock
+                }
+
+                if (execLockTaken)
+                {
                     try
                     {
-                        var next = Schedule.Next();
-                        if (next <= PrevEvent)
-                            next = Schedule.Next(PrevEvent);
-
-                        NextEvent = next;
+                        if (Callback != null)
+                            Callback(this, eventTime);
+                        else
+                            await AsyncCallback(this, eventTime).ConfigureAwait(false);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
-                        _runId++;
-                        IsScheduleRunning = false;
-                        RaiseException(new ScheduleCrashException("Schtick Schedule has been terminated because the next valid time could not be found.", this, ex));
-                        return;
+                        RaiseException(ex);
                     }
                 }
             }
+            finally
+            {
+                if (execLockTaken)
+                    _execLocked = 0; // release exec lock
+            }
+
+            // figure out the next time to run the schedule
+            lock (_scheduleLock)
+            {
+                if (ev.RunId != _runId)
+                    return;
+
+                try
+                {
+                    var next = Schedule.Next();
+                    if (next <= eventTime)
+                        next = Schedule.Next(eventTime);
+
+                    NextEvent = next;
+                    QueueNextEvent();
+                }
+                catch (Exception ex)
+                {
+                    _runId++;
+                    IsScheduleRunning = false;
+                    RaiseException(new ScheduleCrashException("Schtick Schedule has been terminated because the next valid time could not be found.", this, ex));
+                }
+            }
+        }
+
+        private void QueueNextEvent()
+        {
+            _schtick.AddPendingEvent(new PendingEvent(NextEvent, this, _runId));
         }
 
         private void RaiseException(Exception ex)
@@ -441,8 +495,7 @@ namespace Schyntax
             {
                 var ev = OnException;
                 ev?.Invoke(this, ex);
-
-            }).ContinueWith(task => { });
+            });
         }
     }
 }
