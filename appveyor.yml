@@ -3,7 +3,7 @@
 #---------------------------------#
 
 environment:
-  NUGET_RELEASE_VERSION: 1.0.4
+  NUGET_RELEASE_VERSION: 1.0.5
   NUGET_FILE: Schtick\Schtick.nuspec
   ASSEMBLY_FILE: Schtick\Properties\AssemblyInfo.cs
 
