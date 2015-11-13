@@ -13,7 +13,7 @@
     <copyright>Copyright 2015</copyright>
     <tags>Schyntax Schedule Task Runner</tags>
     <dependencies>
-      <dependency id="Schyntax" version="1.0.1"/>
+      <dependency id="Schyntax" version="1.0.4"/>
     </dependencies>
   </metadata>
 </package>
