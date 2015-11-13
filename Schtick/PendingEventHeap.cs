@@ -107,17 +107,17 @@ namespace Schyntax
             return Count > 0 ? _events[0] : null;
         }
 
-        private int ParentIndex(int index)
+        private static int ParentIndex(int index)
         {
             return (index - 1) / 2;
         }
 
-        private int LeftChildIndex(int index)
+        private static int LeftChildIndex(int index)
         {
             return 2 * (index + 1);
         }
 
-        private int RightChildIndex(int index)
+        private static int RightChildIndex(int index)
         {
             return 2 * (index + 1) - 1;
         }
