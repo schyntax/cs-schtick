@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,8 @@ namespace Schyntax
         public bool IsShuttingDown { get; private set; }
 
         public event Action<ScheduledTask, Exception> OnTaskException;
+
+        public TaskCollection Tasks => new TaskCollection(_tasks.Values);
 
         public Schtick()
         {
@@ -309,6 +312,45 @@ namespace Schyntax
                 }
             }
         }
+
+        public struct TaskCollection : IReadOnlyCollection<ScheduledTask>
+        {
+            readonly Dictionary<string, ScheduledTask>.ValueCollection _values;
+
+            public int Count => _values.Count;
+
+            internal TaskCollection(Dictionary<string, ScheduledTask>.ValueCollection values)
+            {
+                _values = values;
+            }
+
+            public Enumerator GetEnumerator()
+            {
+                return new Enumerator(_values.GetEnumerator());
+            }
+
+            IEnumerator<ScheduledTask> IEnumerable<ScheduledTask>.GetEnumerator() => GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            public struct Enumerator : IEnumerator<ScheduledTask>
+            {
+                Dictionary<string, ScheduledTask>.ValueCollection.Enumerator _enumerator;
+
+                public ScheduledTask Current => _enumerator.Current;
+
+                object IEnumerator.Current => _enumerator.Current;
+
+                internal Enumerator(Dictionary<string, ScheduledTask>.ValueCollection.Enumerator enumerator)
+                {
+                    _enumerator = enumerator;
+                }
+
+                public bool MoveNext() => _enumerator.MoveNext();
+                public void Dispose() => _enumerator.Dispose();
+                void IEnumerator.Reset() => ((IEnumerator)_enumerator).Reset();
+            }
+        }
+
     }
 
     public class ScheduledTask
