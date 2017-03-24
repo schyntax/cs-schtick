@@ -2,7 +2,7 @@
 
 namespace Schyntax
 {
-    internal class PendingEvent
+    class PendingEvent
     {
         public DateTimeOffset ScheduledTime { get; }
         public ScheduledTask Task { get; }
@@ -26,9 +26,9 @@ namespace Schyntax
         }
     }
 
-    internal class PendingEventHeap
+    class PendingEventHeap
     {
-        private PendingEvent[] _events = new PendingEvent[16];
+        PendingEvent[] _events = new PendingEvent[16];
 
         public int Count { get; private set; }
 
@@ -107,22 +107,22 @@ namespace Schyntax
             return Count > 0 ? _events[0] : null;
         }
 
-        private static int ParentIndex(int index)
+        static int ParentIndex(int index)
         {
             return (index - 1) / 2;
         }
 
-        private static int LeftChildIndex(int index)
+        static int LeftChildIndex(int index)
         {
             return 2 * (index + 1);
         }
 
-        private static int RightChildIndex(int index)
+        static int RightChildIndex(int index)
         {
             return 2 * (index + 1) - 1;
         }
 
-        private void Swap(int a, int b)
+        void Swap(int a, int b)
         {
             var temp = _events[a];
             _events[a] = _events[b];
@@ -130,7 +130,7 @@ namespace Schyntax
         }
 
         // returns the index of the added item
-        private int Add(PendingEvent ev)
+        int Add(PendingEvent ev)
         {
             // check if we need to resize
             if (_events.Length == Count)
@@ -144,7 +144,7 @@ namespace Schyntax
             return Count++; // postfix is intentional
         }
 
-        private PendingEvent ClearEndElement()
+        PendingEvent ClearEndElement()
         {
             Count--;
             var ev = _events[Count];

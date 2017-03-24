@@ -9,7 +9,7 @@ namespace Schyntax.Tests
     [TestFixture]
     public class SchtickTests
     {
-        private struct RunRecord
+        struct RunRecord
         {
             public DateTimeOffset Actual { get; }
             public DateTimeOffset Intended { get; }

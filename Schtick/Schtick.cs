@@ -10,10 +10,10 @@ namespace Schyntax
 
     public class Schtick
     {
-        private readonly object _lockTasks = new object();
-        private readonly Dictionary<string, ScheduledTask> _tasks = new Dictionary<string, ScheduledTask>();
-        private readonly object _lockHeap = new object();
-        private readonly PendingEventHeap _eventHeap = new PendingEventHeap();
+        readonly object _lockTasks = new object();
+        readonly Dictionary<string, ScheduledTask> _tasks = new Dictionary<string, ScheduledTask>();
+        readonly object _lockHeap = new object();
+        readonly PendingEventHeap _eventHeap = new PendingEventHeap();
 
         public bool IsShuttingDown { get; private set; }
 
@@ -135,7 +135,7 @@ namespace Schyntax
             return AddTaskImpl(name, schedule, null, asyncCallback, autoRun, lastKnownEvent, window);
         }
 
-        private ScheduledTask AddTaskImpl(
+        ScheduledTask AddTaskImpl(
             string name,
             Schedule schedule,
             ScheduledTaskCallback callback,
@@ -176,7 +176,7 @@ namespace Schyntax
             return task;
         }
 
-        private void TaskOnOnException(ScheduledTask task, Exception ex)
+        void TaskOnOnException(ScheduledTask task, Exception ex)
         {
             var ev = OnTaskException;
             ev?.Invoke(task, ex);
@@ -269,7 +269,7 @@ namespace Schyntax
             }
         }
 
-        private async Task Poll()
+        async Task Poll()
         {
             // figure out the initial delay
             var now = DateTimeOffset.UtcNow;
@@ -299,7 +299,7 @@ namespace Schyntax
             }
         }
 
-        private void PopAndRunEvents(DateTimeOffset intendedTime)
+        void PopAndRunEvents(DateTimeOffset intendedTime)
         {
             lock (_lockHeap)
             {
@@ -313,10 +313,10 @@ namespace Schyntax
 
     public class ScheduledTask
     {
-        private readonly object _scheduleLock = new object();
-        private int _runId = 0;
-        private int _execLocked = 0;
-        private readonly Schtick _schtick;
+        readonly object _scheduleLock = new object();
+        int _runId = 0;
+        int _execLocked = 0;
+        readonly Schtick _schtick;
 
         public string Name { get; }
         public Schedule Schedule { get; private set; }
@@ -484,12 +484,12 @@ namespace Schyntax
             }
         }
 
-        private void QueueNextEvent()
+        void QueueNextEvent()
         {
             _schtick.AddPendingEvent(new PendingEvent(NextEvent, this, _runId));
         }
 
-        private void RaiseException(Exception ex)
+        void RaiseException(Exception ex)
         {
             Task.Run(() =>
             {
