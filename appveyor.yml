@@ -1,58 +1,31 @@
-#---------------------------------#
-#      general configuration      #
-#---------------------------------#
-
-environment:
-  NUGET_RELEASE_VERSION: 1.0.5
-  NUGET_FILE: Schtick\Schtick.nuspec
-  ASSEMBLY_FILE: Schtick\Properties\AssemblyInfo.cs
-
-version: $(NUGET_RELEASE_VERSION).{build}
+# See http://www.appveyor.com/docs/appveyor-yml for reference
 
 #---------------------------------#
 #    environment configuration    #
 #---------------------------------#
 
-os: Visual Studio 2015 RC
-
-assembly_info:
-  patch: true
-  file: $(ASSEMBLY_FILE)
-  assembly_version: $(MAJOR_VERSION)
-  assembly_file_version: $(appveyor_build_version)
-  assembly_informational_version: $(NUGET_VERSION)
-
-install:
-  - set PATH=C:\Program Files (x86)\MSBuild\14.0\Bin;%PATH%
-  - ps: Scripts\SetNugetVersion.ps1
+os: Visual Studio 2017
 
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
-platform: Any CPU
-
-configuration: Release
-
-build:
-  project: Schtick.sln
-  publish_nuget: true
-  publish_nuget_symbols: true
-  verbosity: normal
-
-#---------------------------------#
-#       tests configuration       #
-#---------------------------------#
-
-test:
-  assemblies:
-    - '**\*.Tests.dll'
+build_script:
+  - ps: .\build.ps1 -pack
 
 #---------------------------------#
 #      artifacts configuration    #
 #---------------------------------#
 
+artifacts:
+  - path: artifacts/*
 
+#---------------------------------#
+#       tests configuration       #
+#---------------------------------#
+
+# we run tests explicitly as part of the build script
+test: off
 
 #---------------------------------#
 #     deployment configuration    #

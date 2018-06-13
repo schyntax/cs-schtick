@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.22823.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Schtick", "Schtick\Schtick.csproj", "{A4769FD0-8323-4E2B-94C2-B3D728657D86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Schtick", "Schtick\Schtick.csproj", "{A4769FD0-8323-4E2B-94C2-B3D728657D86}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Schtick.Tests", "Schtick.Tests\Schtick.Tests.csproj", "{7416F5E8-BAA3-4BA6-974C-826D9A99F64A}"
 EndProject
@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		appveyor.yml = appveyor.yml
+		build.cmd = build.cmd
+		build.ps1 = build.ps1
 		LICENSE.MIT = LICENSE.MIT
 	EndProjectSection
 EndProject
@@ -32,5 +34,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E4A82038-2F14-4C97-8B82-4579C5ECD987}
 	EndGlobalSection
 EndGlobal
