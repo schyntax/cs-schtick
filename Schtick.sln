@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Schtick", "Schtick\Schtick.csproj", "{A4769FD0-8323-4E2B-94C2-B3D728657D86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Schtick.Tests", "Schtick.Tests\Schtick.Tests.csproj", "{7416F5E8-BAA3-4BA6-974C-826D9A99F64A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Schtick.Tests", "Schtick.Tests\Schtick.Tests.csproj", "{7416F5E8-BAA3-4BA6-974C-826D9A99F64A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{11B7E038-14B6-42DE-B2B6-D30D3DC94CA7}"
 	ProjectSection(SolutionItems) = preProject
